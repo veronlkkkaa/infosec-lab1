@@ -18,7 +18,7 @@
 Kotlin 2.4.21, Spring Boot 4.1.2, Spring MVC, Spring Security, Nimbus JWT,
 Spring JDBC / JdbcTemplate, файловая H2. JDK 21, Gradle Wrapper 8.14.5.
 Пароли: BCrypt, cost 12. JSON: Jackson 3. Тесты: JUnit / MockMvc.
-SAST: SpotBugs 4.10.4 + Find Security Bugs 1.14.0. SCA: OWASP Dependency-Check 13.0.0.
+SAST: SpotBugs 4.10.4 + Find Security Bugs 1.14.0. SCA: OWASP Dependency-Check 12.2.2.
 
 Версии инструментов заданы в `build.gradle.kts`; версии Spring-зависимостей управляются BOM.
 Gradle lock-файла пока нет.
@@ -246,6 +246,13 @@ SAST анализирует production-байткод категории SECURIT
 методов контроллера и чтение длины Authorization. XSS_SERVLET не исключён.
 
 SCA проверяет прямые и транзитивные runtime-зависимости через стандартный NVD REST API.
+Версия анализатора закреплена на **12.2.2**: в 13.0.0 подтверждена
+[регрессия анонимного доступа к NVD](https://github.com/dependency-check/DependencyCheck/issues/8715).
+Внутренний конфигурационный файл 13.0.0 задаёт пустой ключ даже при отсутствии настройки
+в Gradle. Поэтому одной фильтрации пустой переменной окружения недостаточно.
+В исходниках 12.2.2 этого пустого значения по умолчанию нет; опубликованный плагин
+сохраняет используемые в проекте Gradle Property-настройки.
+Переход версии проверен чтением исходников и конфигурации; новый SCA ещё не запускался.
 Неработающий URL feed удалён: Dependency-Check использует штатный API по
 [официальной документации](https://dependency-check.github.io/DependencyCheck/dependency-check-gradle/configuration.html).
 Без ключа используется анонимный доступ с более длительной паузой между запросами;

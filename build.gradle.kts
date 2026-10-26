@@ -8,7 +8,8 @@ plugins {
     kotlin("plugin.spring") version "2.4.21"
     id("org.springframework.boot") version "4.1.2"
     id("com.github.spotbugs") version "6.5.12"
-    id("org.owasp.dependencycheck") version "13.0.0"
+    // 13.0.0 breaks anonymous NVD access: https://github.com/dependency-check/DependencyCheck/issues/8715
+    id("org.owasp.dependencycheck") version "12.2.2"
 }
 
 group = "ru.itmo.infosec"
