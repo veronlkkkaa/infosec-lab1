@@ -10,7 +10,7 @@ spring:
   application:
     name: lab1-secure-api
   datasource:
-    url: ${DATABASE_URL:jdbc:h2:file:./data/lab}
+    url: ${DATABASE_URL:jdbc:h2:file:./data/incident-log}
     username: ${DATABASE_USERNAME:sa}
     password: ${DATABASE_PASSWORD:}
   sql:

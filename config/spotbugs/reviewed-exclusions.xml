@@ -8,12 +8,12 @@
         <Method name="~securityFilterChain(\$.*)?"/>
         <Bug pattern="SPRING_CSRF_PROTECTION_DISABLED"/>
     </Match>
-    <!-- Endpoint inventory, not a vulnerability: all three routes are intentional.
-         Login validates credentials; data and notes require a verified JWT and enforce ownership.
+    <!-- Endpoint inventory, not a vulnerability: these four routes are intentional.
+         Login validates credentials; incident reads, creation and status changes enforce JWT and ownership.
          A new method is not covered by this review. -->
     <Match>
         <Class name="ru.itmo.infosec.lab1.ApiController"/>
-        <Method name="~(login|listNotes|createNote)"/>
+        <Method name="~(login|listIncidents|createIncident|updateIncidentStatus)"/>
         <Bug pattern="SPRING_ENDPOINT"/>
     </Match>
     <!-- The untrusted Authorization header is read only to reject oversized values.

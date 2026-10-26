@@ -1,16 +1,16 @@
 package ru.itmo.infosec.lab1
 
-import org.springframework.http.HttpStatus
-import org.springframework.security.crypto.password.PasswordEncoder
-import org.springframework.security.oauth2.jose.jws.MacAlgorithm
-import org.springframework.security.oauth2.jwt.JwtClaimsSet
-import org.springframework.security.oauth2.jwt.JwtEncoder
-import org.springframework.security.oauth2.jwt.JwtEncoderParameters
-import org.springframework.security.oauth2.jwt.JwsHeader
-import org.springframework.stereotype.Service
 import java.security.SecureRandom
 import java.time.Clock
 import java.util.Base64
+import org.springframework.http.HttpStatus
+import org.springframework.security.crypto.password.PasswordEncoder
+import org.springframework.security.oauth2.jose.jws.MacAlgorithm
+import org.springframework.security.oauth2.jwt.JwsHeader
+import org.springframework.security.oauth2.jwt.JwtClaimsSet
+import org.springframework.security.oauth2.jwt.JwtEncoder
+import org.springframework.security.oauth2.jwt.JwtEncoderParameters
+import org.springframework.stereotype.Service
 
 @Service
 class AuthService(
@@ -19,9 +19,11 @@ class AuthService(
     private val jwtEncoder: JwtEncoder,
     private val clock: Clock,
 ) {
-    private val dummyHash = passwordEncoder.encode(Base64.getEncoder().encodeToString(
-        ByteArray(32).also { SecureRandom().nextBytes(it) },
-    ))
+    private val dummyHash = passwordEncoder.encode(
+        Base64.getEncoder().encodeToString(
+            ByteArray(32).also { SecureRandom().nextBytes(it) },
+        )
+    )
 
     fun login(body: LoginRequest): TokenResponse {
         if (!TextRules.valid(body.username) || !TextRules.passwordFitsBcrypt(body.password)) {

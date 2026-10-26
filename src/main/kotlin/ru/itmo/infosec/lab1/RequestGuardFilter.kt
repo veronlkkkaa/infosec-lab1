@@ -1,18 +1,18 @@
 package ru.itmo.infosec.lab1
 
-import tools.jackson.databind.json.JsonMapper
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ReadListener
 import jakarta.servlet.ServletInputStream
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletRequestWrapper
 import jakarta.servlet.http.HttpServletResponse
-import org.springframework.stereotype.Component
-import org.springframework.web.filter.OncePerRequestFilter
 import java.io.BufferedReader
 import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
 import java.util.ArrayDeque
+import org.springframework.stereotype.Component
+import org.springframework.web.filter.OncePerRequestFilter
+import tools.jackson.databind.json.JsonMapper
 
 object JsonErrors {
     private val mapper = JsonMapper.builder().build()
@@ -75,10 +75,15 @@ class RequestGuardFilter(private val limiter: LoginLimiter) : OncePerRequestFilt
         chain.doFilter(CachedBodyRequest(request, bytes), response)
     }
 
-    companion object { private const val MAX_BODY_BYTES = 16 * 1024 }
+    companion object {
+        private const val MAX_BODY_BYTES = 16 * 1024
+    }
 }
 
-private class CachedBodyRequest(request: HttpServletRequest, private val bytes: ByteArray) : HttpServletRequestWrapper(request) {
+private class CachedBodyRequest(
+    request: HttpServletRequest,
+    private val bytes: ByteArray,
+) : HttpServletRequestWrapper(request) {
     override fun getContentLength(): Int = bytes.size
     override fun getContentLengthLong(): Long = bytes.size.toLong()
     override fun getInputStream(): ServletInputStream {
@@ -93,5 +98,6 @@ private class CachedBodyRequest(request: HttpServletRequest, private val bytes: 
             }
         }
     }
+
     override fun getReader(): BufferedReader = BufferedReader(InputStreamReader(inputStream, Charsets.UTF_8))
 }

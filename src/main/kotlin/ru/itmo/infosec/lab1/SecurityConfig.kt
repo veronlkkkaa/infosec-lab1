@@ -3,6 +3,11 @@ package ru.itmo.infosec.lab1
 import com.nimbusds.jose.jwk.source.ImmutableSecret
 import com.nimbusds.jose.proc.SecurityContext
 import jakarta.servlet.DispatcherType
+import java.time.Clock
+import java.time.Duration
+import java.util.Base64
+import javax.crypto.SecretKey
+import javax.crypto.spec.SecretKeySpec
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -16,15 +21,16 @@ import org.springframework.security.oauth2.core.OAuth2Error
 import org.springframework.security.oauth2.core.OAuth2TokenValidator
 import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm
-import org.springframework.security.oauth2.jwt.*
+import org.springframework.security.oauth2.jwt.Jwt
+import org.springframework.security.oauth2.jwt.JwtDecoder
+import org.springframework.security.oauth2.jwt.JwtEncoder
+import org.springframework.security.oauth2.jwt.JwtIssuerValidator
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator
+import org.springframework.security.oauth2.jwt.NimbusJwtDecoder
+import org.springframework.security.oauth2.jwt.NimbusJwtEncoder
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter
-import java.time.Clock
-import java.time.Duration
-import java.util.Base64
-import javax.crypto.SecretKey
-import javax.crypto.spec.SecretKeySpec
 
 const val JWT_ISSUER = "lab1-secure-api"
 const val JWT_AUDIENCE = "lab1-client"
@@ -67,9 +73,11 @@ class SecurityConfig {
             if (valid) OAuth2TokenValidatorResult.success()
             else OAuth2TokenValidatorResult.failure(OAuth2Error("invalid_token", "Invalid claims", null))
         }
-        decoder.setJwtValidator(DelegatingOAuth2TokenValidator(
-            timeValidator, JwtIssuerValidator(JWT_ISSUER), requiredClaims,
-        ))
+        decoder.setJwtValidator(
+            DelegatingOAuth2TokenValidator(
+                timeValidator, JwtIssuerValidator(JWT_ISSUER), requiredClaims,
+            )
+        )
         return decoder
     }
 

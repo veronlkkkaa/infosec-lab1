@@ -89,6 +89,7 @@ tasks.named("dependencyCheckAnalyze") {
                     (value["sha256"] as? String)?.let { hashes.add(it.lowercase()) }
                     value.values.forEach { collect(it) }
                 }
+
                 is List<*> -> value.forEach { collect(it) }
             }
         }

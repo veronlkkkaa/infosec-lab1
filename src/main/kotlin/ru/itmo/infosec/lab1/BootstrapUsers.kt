@@ -30,7 +30,9 @@ class BootstrapUsers(
     }
 
     private fun createIfMissing(name: String, suppliedPassword: String) {
-        require(Regex("[A-Za-z0-9_.-]{3,64}").matches(name)) { "Username must contain 3-64 ASCII letters, digits, _, . or -" }
+        require(Regex("[A-Za-z0-9_.-]{3,64}").matches(name)) {
+            "Username must contain 3-64 ASCII letters, digits, _, . or -"
+        }
         if (users.findByUsername(name) != null) return
         require(suppliedPassword.length >= 15 && TextRules.passwordFitsBcrypt(suppliedPassword)) {
             "Set a password of at least 15 characters and at most 72 UTF-8 bytes in LAB_PASSWORD / LAB_SECOND_PASSWORD"

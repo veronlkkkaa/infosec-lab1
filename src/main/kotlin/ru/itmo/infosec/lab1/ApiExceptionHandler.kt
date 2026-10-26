@@ -2,6 +2,7 @@ package ru.itmo.infosec.lab1
 
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.HttpStatusCode
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.ExceptionHandler
@@ -18,6 +19,16 @@ class ApiExceptionHandler : ResponseEntityExceptionHandler() {
         val headers = HttpHeaders()
         if (error.status.value() == 401) headers.set("WWW-Authenticate", "Bearer")
         return ResponseEntity.status(error.status).headers(headers).body(ApiError(error.code))
+    }
+
+    @ExceptionHandler(IncidentException::class)
+    fun incidentError(error: IncidentException): ResponseEntity<ApiError> {
+        val status = when (error.failure) {
+            IncidentFailure.INVALID_DATA -> HttpStatus.BAD_REQUEST
+            IncidentFailure.NOT_FOUND -> HttpStatus.NOT_FOUND
+            IncidentFailure.INVALID_TRANSITION, IncidentFailure.CONCURRENT_CHANGE -> HttpStatus.CONFLICT
+        }
+        return ResponseEntity.status(status).body(ApiError(error.failure.code))
     }
 
     override fun handleExceptionInternal(
