@@ -1,0 +1,184 @@
+{
+  "date": "2026-10-25",
+  "finished_utc": "2026-10-25T18:28:26.119940+00:00",
+  "scope": "Local real HTTP using curl, temporary accounts and file H2; server stopped and temporary data removed.",
+  "jar_sha256": "ac44e26ca4afc160294addee36b231c4f9eb68f1fead17337e0fbe6aed9f12a0",
+  "checks": 15,
+  "passed": 15,
+  "failed": 0,
+  "results": [
+    {
+      "check": "Protected GET without JWT",
+      "method": "GET",
+      "path": "/api/data",
+      "expected_status": 401,
+      "actual_status": 401,
+      "response": {
+        "error": "unauthorized"
+      }
+    },
+    {
+      "check": "Protected POST without JWT",
+      "method": "POST",
+      "path": "/api/notes",
+      "expected_status": 401,
+      "actual_status": 401,
+      "response": {
+        "error": "unauthorized"
+      }
+    },
+    {
+      "check": "Wrong password",
+      "method": "POST",
+      "path": "/auth/login",
+      "expected_status": 401,
+      "actual_status": 401,
+      "response": {
+        "error": "unauthorized"
+      }
+    },
+    {
+      "check": "SQL injection does not authenticate",
+      "method": "POST",
+      "path": "/auth/login",
+      "expected_status": 401,
+      "actual_status": 401,
+      "response": {
+        "error": "unauthorized"
+      }
+    },
+    {
+      "check": "Alice login",
+      "method": "POST",
+      "path": "/auth/login",
+      "expected_status": 200,
+      "actual_status": 200,
+      "response": {
+        "access_token": "[REDACTED: temporary test token]",
+        "token_type": "Bearer",
+        "expires_in": 900
+      }
+    },
+    {
+      "check": "Create and escape note",
+      "method": "POST",
+      "path": "/api/notes",
+      "expected_status": 201,
+      "actual_status": 201,
+      "response": {
+        "id": 1,
+        "title": "&lt;script&gt;alert(1)&lt;/script&gt;",
+        "content": "&lt;script&gt;alert(1)&lt;/script&gt;",
+        "created_at": "2026-10-25T18:28:22.982130Z"
+      }
+    },
+    {
+      "check": "Alice reads own escaped note",
+      "method": "GET",
+      "path": "/api/data",
+      "expected_status": 200,
+      "actual_status": 200,
+      "response": {
+        "items": [
+          {
+            "id": 1,
+            "title": "&lt;script&gt;alert(1)&lt;/script&gt;",
+            "content": "&lt;script&gt;alert(1)&lt;/script&gt;",
+            "created_at": "2026-10-25T18:28:22.982130Z"
+          }
+        ]
+      }
+    },
+    {
+      "check": "Bob login",
+      "method": "POST",
+      "path": "/auth/login",
+      "expected_status": 200,
+      "actual_status": 200,
+      "response": {
+        "access_token": "[REDACTED: temporary test token]",
+        "token_type": "Bearer",
+        "expires_in": 900
+      }
+    },
+    {
+      "check": "Bob cannot read Alice note",
+      "method": "GET",
+      "path": "/api/data",
+      "expected_status": 200,
+      "actual_status": 200,
+      "response": {
+        "items": []
+      }
+    },
+    {
+      "check": "Number in string field is rejected",
+      "method": "POST",
+      "path": "/api/notes",
+      "expected_status": 400,
+      "actual_status": 400,
+      "response": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "check": "Client cannot supply owner_id",
+      "method": "POST",
+      "path": "/api/notes",
+      "expected_status": 400,
+      "actual_status": 400,
+      "response": {
+        "error": "invalid_request"
+      }
+    },
+    {
+      "check": "Modified signature is rejected",
+      "method": "GET",
+      "path": "/api/data",
+      "expected_status": 401,
+      "actual_status": 401,
+      "response": {
+        "error": "unauthorized"
+      }
+    },
+    {
+      "check": "Body over 16 KiB is rejected",
+      "method": "POST",
+      "path": "/api/notes",
+      "expected_status": 413,
+      "actual_status": 413,
+      "response": {
+        "error": "request_too_large"
+      }
+    },
+    {
+      "check": "File H2 retains the note after restart",
+      "method": "GET",
+      "path": "/api/data",
+      "expected_status": 200,
+      "actual_status": 200,
+      "response": {
+        "items": [
+          {
+            "id": 1,
+            "title": "&lt;script&gt;alert(1)&lt;/script&gt;",
+            "content": "&lt;script&gt;alert(1)&lt;/script&gt;",
+            "created_at": "2026-10-25T18:28:22.982130Z"
+          }
+        ]
+      }
+    },
+    {
+      "check": "Existing account can log in after restart",
+      "method": "POST",
+      "path": "/auth/login",
+      "expected_status": 200,
+      "actual_status": 200,
+      "response": {
+        "access_token": "[REDACTED: temporary test token]",
+        "token_type": "Bearer",
+        "expires_in": 900
+      }
+    }
+  ]
+}

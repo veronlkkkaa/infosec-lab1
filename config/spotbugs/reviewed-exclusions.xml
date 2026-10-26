@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FindBugsFilter>
+    <!-- Deliberate, reviewed exception: stateless API accepts only an explicit Bearer header.
+         Cookie/session/Basic authentication is disabled. Revisit if browser cookies are added.
+         This exception applies only to this Bearer-only security chain. -->
+    <Match>
+        <Class name="ru.itmo.infosec.lab1.SecurityConfig"/>
+        <Method name="~securityFilterChain(\$.*)?"/>
+        <Bug pattern="SPRING_CSRF_PROTECTION_DISABLED"/>
+    </Match>
+    <!-- Endpoint inventory, not a vulnerability: all three routes are intentional.
+         Login validates credentials; data and notes require a verified JWT and enforce ownership.
+         A new method is not covered by this review. -->
+    <Match>
+        <Class name="ru.itmo.infosec.lab1.ApiController"/>
+        <Method name="~(login|listNotes|createNote)"/>
+        <Bug pattern="SPRING_ENDPOINT"/>
+    </Match>
+    <!-- The untrusted Authorization header is read only to reject oversized values.
+         No identity is inferred here; NimbusJwtDecoder validates the token afterwards.
+         Tests cover oversized headers, modified signatures, alg=none and invalid claims. -->
+    <Match>
+        <Class name="ru.itmo.infosec.lab1.RequestGuardFilter"/>
+        <Method name="doFilterInternal"/>
+        <Bug pattern="SERVLET_HEADER"/>
+    </Match>
+</FindBugsFilter>

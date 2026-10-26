@@ -1,0 +1,70 @@
+{
+  "date": "2026-10-25",
+  "student": "Гаврилович Вероника Вячеславовна",
+  "group": "Р3431",
+  "command": "./gradlew --no-daemon --console=plain build test dependencyCheckAnalyze",
+  "result": "BUILD SUCCESSFUL",
+  "java": "Temurin 21.0.10+7-LTS",
+  "gradle": "8.14.5",
+  "kotlin": "2.4.21",
+  "springBoot": "4.1.2",
+  "tests": [
+    {
+      "name": "ru.itmo.infosec.lab1.ApiSecurityTest",
+      "tests": "19",
+      "skipped": "0",
+      "failures": "0",
+      "errors": "0",
+      "timestamp": "2026-10-25T18:27:11.622Z",
+      "time": "2.103"
+    }
+  ],
+  "sast": {
+    "findings": 0,
+    "errors": 0,
+    "missingClasses": 0,
+    "productionClassFiles": 27,
+    "scope": "SECURITY, Confidence.LOW, three reviewed exclusion rules"
+  },
+  "sca": {
+    "engine": "13.0.0",
+    "runtimeJars": 70,
+    "reportedDependencies": 75,
+    "uniqueVulnerabilities": 0,
+    "allRuntimeSha256Present": true,
+    "reportDate": "2026-10-25T18:27:03.703881Z",
+    "dataSource": [
+      {
+        "name": "NVD API Last Checked",
+        "timestamp": "2026-10-25T18:09:27Z"
+      },
+      {
+        "name": "NVD API Last Modified",
+        "timestamp": "2026-10-25T12:00:08-04"
+      },
+      {
+        "name": "NVD Cache Last Checked",
+        "timestamp": "2026-10-25T18:09:27Z"
+      },
+      {
+        "name": "NVD Cache Last Modified",
+        "timestamp": "2026-10-25T12:00:08-04"
+      }
+    ],
+    "failBuildOnCVSS": 7,
+    "supplementaryOssIndex": "disabled; requires personal credentials",
+    "suppressionFiles": []
+  },
+  "http": {
+    "passed": 15,
+    "failed": 0,
+    "scope": "actual curl, loopback HTTP, isolated file H2, restart persistence and bootstrap",
+    "jarSha256": "ac44e26ca4afc160294addee36b231c4f9eb68f1fead17337e0fbe6aed9f12a0"
+  },
+  "notRun": [
+    "GitHub Actions",
+    "public repository publication",
+    "interactive run-local.sh",
+    "personal account audit for labs 5+8"
+  ]
+}

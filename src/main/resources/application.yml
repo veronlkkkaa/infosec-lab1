@@ -1,0 +1,37 @@
+server:
+  address: 127.0.0.1
+  port: 8080
+  forward-headers-strategy: none
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
+spring:
+  application:
+    name: lab1-secure-api
+  datasource:
+    url: ${DATABASE_URL:jdbc:h2:file:./data/lab}
+    username: ${DATABASE_USERNAME:sa}
+    password: ${DATABASE_PASSWORD:}
+  sql:
+    init:
+      mode: always
+  h2:
+    console:
+      enabled: false
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+      accept-float-as-int: false
+      fail-on-trailing-tokens: true
+    mapper:
+      allow-coercion-of-scalars: false
+app:
+  jwt:
+    secret-base64: ${JWT_SECRET_BASE64:}
+  bootstrap:
+    enabled: true
+    username: ${LAB_USERNAME:alice}
+    password: ${LAB_PASSWORD:}
+    second-username: ${LAB_SECOND_USERNAME:bob}
+    second-password: ${LAB_SECOND_PASSWORD:}

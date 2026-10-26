@@ -1,0 +1,13 @@
+.gradle/
+.kotlin/
+build/
+.idea/
+*.iml
+.env
+.env.*
+!.env.example
+data/
+reports/
+*.mv.db
+*.trace.db
+.DS_Store
