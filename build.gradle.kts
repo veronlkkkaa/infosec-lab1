@@ -75,7 +75,7 @@ dependencyCheck {
     providers.environmentVariable("NVD_API_KEY").orNull
         ?.takeIf { it.isNotBlank() }
         ?.let { nvd.apiKey.set(it) }
-    nvd.maxRetryCount.set(3)
+    // Keep the default retry count: client 9.0.5 logs misleading warnings at low values.
     // Supplementary OSS Index now requires credentials; NVD analysis remains enabled.
     analyzers.ossIndex.enabled.set(false)
 }
