@@ -71,7 +71,9 @@ dependencyCheck {
     failOnError.set(true)
     // Use the standard NVD REST API; the previous custom feed returned HTTP 404.
     // An optional key speeds up requests. Without it, the plugin applies its anonymous rate limit.
-    nvd.apiKey.set(providers.environmentVariable("NVD_API_KEY").orElse(""))
+    providers.environmentVariable("NVD_API_KEY").orNull
+        ?.takeIf { it.isNotBlank() }
+        ?.let { nvd.apiKey.set(it) }
     nvd.maxRetryCount.set(3)
     // Supplementary OSS Index now requires credentials; NVD analysis remains enabled.
     analyzers.ossIndex.enabled.set(false)
