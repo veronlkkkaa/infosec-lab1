@@ -1,307 +1,277 @@
 # infosec-lab1
 
-Журнал инцидентов информационной безопасности
-
-Лабораторная работа № 1: защищённый REST API с интеграцией в CI/CD.
-**Kotlin + Spring Boot.** Пользователь регистрирует инциденты, указывает категорию и
-критичность, берёт их в работу и закрывает. Каждому доступны только собственные записи.
+Лабораторная работа № 1: защищённый REST API журнала инцидентов информационной безопасности.
+Пользователь входит по логину и паролю, получает JWT, создаёт свои инциденты,
+просматривает их и меняет статус.
 
 **Автор:** Гаврилович Вероника Вячеславовна, Р3431.
+
 **Репозиторий:** [veronlkkkaa/infosec-lab1](https://github.com/veronlkkkaa/infosec-lab1).
 
-**Версия:** журнал инцидентов, коммит [`70880fa`](https://github.com/veronlkkkaa/infosec-lab1/commit/70880fa1da8e91a77ccb808b54d23ee018821621).
-[GitHub Actions — запуск № 1](https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40358417953).
+За основу организации кода и CI взят
+[cysec_1, версия 20227df](https://github.com/zazhigalka56123/cysec_1/tree/20227dfc86d92b264d5cbfe2bb7b2b034f3070c4).
+Здесь реализована своя предметная область — инциденты ИБ, файловая база и два пользователя
+для проверки разграничения доступа.
 
-## Стек
+## Стек и структура
 
-Kotlin 2.4.21, Spring Boot 4.1.2, Spring MVC, Spring Security, Nimbus JWT,
-Spring JDBC / JdbcTemplate, файловая H2. JDK 21, Gradle Wrapper 8.14.5.
-Пароли: BCrypt, cost 12. JSON: Jackson 3. Тесты: JUnit / MockMvc.
-SAST: SpotBugs 4.10.4 + Find Security Bugs 1.14.0. SCA: OWASP Dependency-Check 12.2.2.
+Spring Boot 4.1.2, Kotlin, Java 21, Spring MVC, Spring Security, Nimbus JWT,
+Spring JDBC / JdbcTemplate, H2, Jackson 3. Gradle Wrapper 8.14.5.
+Пароли: BCrypt с cost 12. Тесты: JUnit и MockMvc.
 
-Версии инструментов заданы в `build.gradle.kts`; версии Spring-зависимостей управляются BOM.
-Gradle lock-файла пока нет.
+Компилятор и Spring-плагин Kotlin закреплены на 2.4.20 — в пределах
+[заявленной поддержки CodeQL](https://codeql.github.com/docs/codeql-overview/supported-languages-and-frameworks/).
+Runtime-библиотеки Kotlin управляются BOM 2.4.21. Версии Spring-зависимостей задаёт Spring Boot BOM.
 
-## Архитектура
+Исходники находятся в `src/main/kotlin/ru/itmo/infosec/lab1/`:
 
-- ApiController: маршруты, получение владельца из JWT, формирование и экранирование ответов.
-- IncidentService: создание, проверка владельца, переходы статуса и границы транзакций.
-- IncidentRepository: параметризованный SQL, выборка своих записей, условное изменение статуса.
-- IncidentApiModels: входные и выходные DTO; IncidentModels: внутренние модели и типы ошибок.
-- AuthService / UserRepository: проверка пароля, выдача JWT и работа с пользователями.
-- SecurityConfig / RequestGuardFilter / JsonConfig: JWT, лимиты и строгий JSON.
-- ApiExceptionHandler: перевод ошибок сервиса в HTTP и единый JSON без паролей и SQL-параметров.
+| Пакет | Назначение |
+|---|---|
+| auth | AuthController, AuthService, создание пользователей, BCrypt, хранилище пользователей и DTO входа |
+| incident | IncidentController, сервис, репозиторий, DTO, категории и статусы инцидентов |
+| security | SecurityConfig, JwtConfig, ограничение входов и размера запросов |
+| error | Единые JSON-ошибки и обработка исключений |
+| validation | Проверка текста и ограничения BCrypt |
+| config | Строгая обработка JSON |
 
-Таблица app_user хранит id, username, password_hash.
-Таблица incident: id, owner_id, title, description, category, severity, status,
-created_at, updated_at. Есть внешний ключ владельца, индекс (owner_id, id),
-NOT NULL и CHECK для перечислений. Поля времени и начальный статус задаёт сервер.
+Контроллер принимает HTTP-запрос, сервис проверяет правила, репозиторий выполняет SQL.
+Объекты запросов и ответов отделены от модели хранения.
+
+## Запуск
+
+Нужны JDK 21, OpenSSL; для скрипта входа также нужен jq.
+На этом Mac JDK 21 можно выбрать так:
+
+```bash
+export JAVA_HOME="/Users/mr-bombastic/Library/Java/JavaVirtualMachines/arcadia-jdk-21"
+./scripts/run-local.sh
+```
+
+Команды выполняются из корня проекта. Скрипт скрыто запрашивает пароли alice и bob
+и генерирует ключ JWT, если он ещё не задан. Для новых пользователей пароль должен содержать
+минимум 15 символов и занимать не более 72 байт UTF-8. Готовых паролей в проекте нет.
+
+Сервис слушает `http://127.0.0.1:8080`.
+По умолчанию данные сохраняются в `data/incident-log.mv.db`.
+Путь можно изменить через DATABASE_URL. Для уже созданной в ходе демонстрации базы:
+
+```bash
+DATABASE_URL="jdbc:h2:file:./data/demo-20261026-202536" ./scripts/run-local.sh
+```
+
+Повторный запуск с той же базой сохраняет пользователей и инциденты.
+Ввод другого начального пароля не меняет пароль существующего пользователя.
+После перезапуска с новым ключом JWT необходимо повторить вход.
 
 ## API
 
-| Метод | Вход | Успех |
-|---|---|---|
-| POST /auth/login | username, password | 200: access_token, token_type, expires_in |
-| GET /api/data | нет | 200: items, последние 100 своих инцидентов |
-| POST /api/incidents | title, description, category, severity | 201: инцидент со статусом NEW |
-| PATCH /api/incidents/{id}/status | status | 200: обновлённый инцидент |
+Тела запросов и ответов передаются в JSON.
+Защищённым методам нужен заголовок `Authorization: Bearer <token>`.
 
-Первые три метода покрывают обязательный контракт работы; PATCH добавляет обработку инцидента.
-Все `/api/*` требуют `Authorization: Bearer <token>`. Запросы с JSON должны содержать
-`Content-Type: application/json`. Базовый URL при локальном запуске — `http://127.0.0.1:8080`.
+| Метод | Ручка | Тело запроса | Успех | Доступ |
+|---|---|---|---|---|
+| POST | /auth/login | username, password | 200: access_token, token_type, expires_in | Без токена |
+| GET | /api/data | — | 200: items, до 100 своих инцидентов | JWT |
+| POST | /api/incidents | title, description, category, severity | 201: созданный инцидент | JWT |
+| PATCH | /api/incidents/{id}/status | status | 200: обновлённый инцидент | JWT |
 
-- title: непустой текст до 120 UTF-16 единиц; description: непустой текст до 2000.
+- title — непустая строка до 120 UTF-16 единиц, description — до 2000.
 - category: PHISHING, MALWARE, UNAUTHORIZED_ACCESS, DATA_LEAK, OTHER.
 - severity: LOW, MEDIUM, HIGH, CRITICAL.
-- status: NEW → IN_PROGRESS → CLOSED. Пропуск, обратный переход и повторное открытие запрещены.
-- Повтор текущего статуса разрешён и не меняет updated_at.
+- Статусы: NEW → IN_PROGRESS → CLOSED. Пропуск и обратный переход запрещены.
+- Повтор текущего статуса разрешён, время изменения остаётся прежним.
 
-Ошибки: 400 invalid_request; 401 unauthorized; 403 forbidden; 404 not_found;
-409 invalid_status_transition / incident_changed; 413 request_too_large;
-415 json_required; 429 too_many_requests. Формат: {"error":"код"}.
+Ответ инцидента содержит id, title, description, category, severity, status, created_at, updated_at.
+Список имеет вид `{"items":[...]}`; при отсутствии записей — `{"items":[]}`.
 
-### POST /auth/login — получить токен
+### Пример запросов
 
-Тело запроса (значение пароля ниже — заполнитель, а не готовая учётная запись):
-
-```json
-{"username":"alice","password":"<пароль, заданный при запуске>"}
-```
-
-Для вызова без записи пароля в историю команд используется готовый скрипт:
+В отдельном терминале проекта:
 
 ```bash
+# Вход: скрипт скрыто запросит пароль.
 TOKEN="$(./scripts/login.sh alice)"
-```
 
-Он скрыто запрашивает пароль, формирует JSON через `jq`, отправляет `POST /auth/login`
-и сохраняет только `access_token` в переменной терминала. Пароль не выводится на экран.
-Формат успешного ответа — `200 OK`:
+# Список своих инцидентов.
+curl -i http://127.0.0.1:8080/api/data \
+  -H "Authorization: Bearer $TOKEN"
 
-```json
-{"access_token":"<подписанный JWT>","token_type":"Bearer","expires_in":900}
-```
-
-Неверный пароль или неизвестное имя дают `401` и `{"error":"unauthorized"}`.
-Публичной регистрации нет: первоначальные аккаунты создаются при старте приложения.
-
-### Вход и регистрация события
-
-```bash
-curl -i http://127.0.0.1:8080/api/data
-TOKEN="$(./scripts/login.sh alice)"
+# Создание с сохранением ID из ответа.
 INCIDENT_ID="$(curl --fail-with-body -sS http://127.0.0.1:8080/api/incidents \
-  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  --data '{"title":"Подозрительное письмо","description":"Неожиданное вложение от неизвестного отправителя","category":"PHISHING","severity":"HIGH"}' \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
+  --data '{"title":"Подозрительное письмо","description":"Ссылка на поддельную страницу входа","category":"PHISHING","severity":"HIGH"}' \
   | jq -er '.id')"
-curl -i http://127.0.0.1:8080/api/data -H "Authorization: Bearer $TOKEN"
-```
 
-Ожидается: 401 без токена; после входа 201 при создании и 200 при чтении. Статус новой записи - NEW.
-login.sh запрашивает пароль скрыто. Полный JWT и пароли не должны попадать на скриншоты.
-
-Пример структуры ответа на создание (ID и даты приведены для иллюстрации):
-
-```json
-{
-  "id": 1,
-  "title": "Подозрительное письмо",
-  "description": "Неожиданное вложение от неизвестного отправителя",
-  "category": "PHISHING",
-  "severity": "HIGH",
-  "status": "NEW",
-  "created_at": "2026-10-26T12:00:00Z",
-  "updated_at": "2026-10-26T12:00:00Z"
-}
-```
-
-`GET /api/data` возвращает `{"items":[...]}` с такими же объектами; без записей —
-`{"items":[]}`. Порядок: новые ID первыми, максимум 100 собственных инцидентов.
-`PATCH` возвращает тот же объект с новым статусом и временем изменения.
-
-### Обработка и закрытие
-
-```bash
+# Перевод в работу.
 curl -i -X PATCH "http://127.0.0.1:8080/api/incidents/$INCIDENT_ID/status" \
-  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
   --data '{"status":"IN_PROGRESS"}'
+
+# Закрытие.
 curl -i -X PATCH "http://127.0.0.1:8080/api/incidents/$INCIDENT_ID/status" \
-  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $TOKEN" \
+  -H 'Content-Type: application/json' \
   --data '{"status":"CLOSED"}'
 ```
 
-Ожидается 200 для обоих переходов. Попытка вернуть CLOSED в IN_PROGRESS должна дать 409.
-После перезапуска с той же базой запись и её статус должны сохраниться; токен при смене ключа нужно получить заново.
+В Postman используются те же адреса и тела: для входа выбрать POST /auth/login,
+Body → raw → JSON и ввести свой логин и пароль. Полученный access_token указать
+в Authorization → Bearer Token для запросов /api/*. Заголовок Content-Type — application/json.
 
-### Проверки безопасности
+Открытие адреса API в обычной вкладке браузера не добавляет Bearer-заголовок и возвращает 401.
+Отдельного пользовательского сайта у приложения нет.
 
-```bash
-BOB_TOKEN="$(./scripts/login.sh bob)"
-curl -i http://127.0.0.1:8080/api/data -H "Authorization: Bearer $BOB_TOKEN"
-curl -i -X PATCH "http://127.0.0.1:8080/api/incidents/$INCIDENT_ID/status" \
-  -H "Authorization: Bearer $BOB_TOKEN" -H 'Content-Type: application/json' \
-  --data '{"status":"IN_PROGRESS"}'
-curl -i http://127.0.0.1:8080/api/incidents \
-  -H "Authorization: Bearer $TOKEN" -H 'Content-Type: application/json' \
-  --data '{"title":"XSS demo","description":"<script>alert(1)</script>","category":"OTHER","severity":"LOW"}'
-printf '%s' "alice' OR 1=1 --" | jq -Rs '{username: ., password: "wrong-password"}' | \
-  curl -i http://127.0.0.1:8080/auth/login -H 'Content-Type: application/json' --data-binary @-
-unset TOKEN BOB_TOKEN
-```
+### Проверки для защиты
 
-Ожидается отсутствие инцидента alice у bob, 404 при изменении чужой записи,
-экранированный description и 401 при SQLi в логине. Дополнительно проверяются
-неверный JWT, owner_id в JSON, severity=0, тело больше 16 КиБ и лимит входа.
+| Действие | Ожидаемый результат |
+|---|---|
+| GET /api/data без JWT | 401 |
+| Вход с неверным паролем или несуществующим логином | Одинаковый ответ 401 |
+| Создание инцидента alice | 201, статус NEW |
+| Вход как bob и получение списка | Запись alice отсутствует |
+| Попытка bob изменить ID записи alice | 404 |
+| Переход NEW сразу в CLOSED | 409 |
+| Логин с SQL-фрагментом: alice' OR 1=1 -- | 401 |
+| Описание со строкой &lt;script&gt;alert(1)&lt;/script&gt; | Ответ содержит экранированный текст |
+| Лишнее поле owner_id или число вместо severity | 400 |
 
-## Реализованные меры защиты
+Ошибки имеют формат `{"error":"код"}`.
+Используются 400 invalid_request, 401 unauthorized, 403 forbidden, 404 not_found,
+409 invalid_status_transition / incident_changed, 413 request_too_large,
+415 json_required, 429 too_many_requests.
 
-### SQL-инъекции (SQLi)
+## Меры защиты
 
-В `UserRepository` и `IncidentRepository` пользовательские значения передаются отдельно от
-SQL через параметры `?` в `JdbcTemplate` или через `PreparedStatement.setString/setLong`.
-Например, поиск пользователя выполняется как `WHERE username = ?`, а изменение инцидента —
-как `WHERE id = ? AND owner_id = ? AND status = ?`. Текст запроса фиксирован; пользовательский
-ввод не подставляется конкатенацией. Строка `alice' OR 1=1 --` остаётся значением имени,
-а не частью SQL-условия. Валидация дополняет параметризацию, но не заменяет её.
+### SQL-инъекции
 
-### Межсайтовый скриптинг (XSS)
+UserRepository и IncidentRepository передают значения через параметры `?` в JdbcTemplate
+и PreparedStatement. Например, поиск пользователя использует `WHERE username = ?`,
+а обновление инцидента — `WHERE id = ? AND owner_id = ? AND status = ?`.
 
-Исходные `title` и `description` сохраняются в БД как текст. При формировании ответа
-`ApiController.toResponse()` вызывает `HtmlUtils.htmlEscape(..., "UTF-8")` для обоих полей.
-Этот общий метод используется при создании, получении списка и изменении статуса:
-сохранённая строка `<script>alert(1)</script>` выдаётся как
-`&lt;script&gt;alert(1)&lt;/script&gt;`. Ответы имеют `Content-Type: application/json`.
+SQL фиксирован. Пользовательская строка передаётся как значение параметра, а не приклеивается
+к тексту запроса. Кавычки и SQL-команды внутри введённого текста не меняют структуру запроса.
+Проверка длины и формата дополняет параметризацию.
 
-Дополнительные ограничения: `X-Content-Type-Options: nosniff`,
-`Content-Security-Policy: default-src 'none'; frame-ancestors 'none'` и запрет фреймов.
-HTML-экранирование относится к HTML-контексту и не является универсальной защитой для
-JavaScript, CSS или URL. Будущий интерфейс должен выводить текст безопасно, например через
-`textContent`, и не вставлять декодированное содержимое в `innerHTML`.
+### XSS
 
-### Пароли и аутентификация
+IncidentController.toResponse вызывает `HtmlUtils.htmlEscape(..., "UTF-8")` для title и description.
+Обработка применяется к созданию, списку и обновлению статуса.
+В базе хранится исходный текст, при выдаче он экранируется один раз:
+`<script>alert(1)</script>` превращается в `&lt;script&gt;alert(1)&lt;/script&gt;`.
 
-1. При первоначальном создании пользователя `BootstrapUsers` проверяет длину пароля:
-   минимум 15 символов, максимум 72 байта UTF-8. Ограничение в байтах предотвращает
-   неоднозначность из-за ограничения BCrypt. Начальные пароли вводит пользователь;
-   они не зашиты в исходники.
-2. `BCryptPasswordEncoder(12)` создаёт соль и хэш. В БД сохраняется только `password_hash`;
-   строка BCrypt содержит алгоритм, стоимость, соль и результат хэширования. При входе
-   пароль проверяется через `matches`, а не расшифровывается.
-3. Неизвестный пользователь и неверный пароль получают одинаковый ответ `401 unauthorized`.
-   Для неизвестного пользователя выполняется проверка с фиктивным BCrypt-хэшем,
-   чтобы уменьшить различие во времени ответа; это не обещает идеально постоянного времени.
-4. После успешного входа `AuthService` выпускает JWT с подписью HS256 на 900 секунд.
-   `sub` содержит ID пользователя, `iss` — `lab1-secure-api`, `aud` — `lab1-client`;
-   также задаются `iat`, `nbf`, `exp`. Пароль и хэш в токен не включаются.
-5. `NimbusJwtDecoder` принимает HS256, проверяет подпись и издателя; дополнительные
-   валидаторы проверяют аудиторию, обязательные временные поля, срок действия и наличие
-   пользователя в БД. Просроченный токен, неверная подпись или claims дают `401`.
-   Ключ передаётся через `JWT_SECRET_BASE64`; он должен содержать минимум 32 случайных байта.
+Ответы имеют Content-Type application/json. Spring Security задаёт
+X-Content-Type-Options: nosniff, X-Frame-Options: DENY,
+Content-Security-Policy: default-src 'none'; frame-ancestors 'none'.
+HTML-экранирование предназначено для текстового HTML-контекста и не заменяет безопасный
+вывод внутри JavaScript, CSS или URL.
 
-JWT подписан, но не зашифрован: его payload доступен владельцу токена. Для передачи
-паролей и токенов вне localhost необходим HTTPS. В приложении нет refresh token,
-MFA и индивидуального отзыва токенов; смена ключа делает ранее выпущенные JWT недействительными.
+### Пароли и вход
 
-### Авторизация и защита от доступа к чужим данным
+BootstrapUsers сохраняет только BCrypt-хэш с cost 12. BCrypt создаёт случайную соль;
+в строке хэша сохраняются параметры алгоритма, соль и результат.
+AuthService проверяет пароль через PasswordEncoder.matches, а не расшифровывает его.
+Для неизвестного пользователя тоже выполняется проверка хэша.
 
-`POST /auth/login` доступен без токена; `/api/**` требует аутентификации, остальные маршруты
-запрещены. Приложение не использует HTTP Basic, форму входа, cookie для аутентификации
-или серверную сессию. JWT передаётся явно в `Authorization: Bearer ...`.
+LoginRequest и UserRecord — обычные классы без сгенерированного toString с паролем или хэшем.
+Пароли не записываются в исходники и сообщения ошибок.
+Граница 72 байта предотвращает неоднозначную проверку обрезанного BCrypt-пароля.
 
-Владелец берётся из проверенного `sub`, а не из тела запроса. Выборка и обновление в БД
-ограничены `owner_id`. При создании поля `owner_id`, `id`, даты и статус от клиента не
-принимаются. Чужой и отсутствующий ID возвращают одинаковый `404`, чтобы не раскрывать
-наличие чужих записей. Допустимы только переходы `NEW → IN_PROGRESS → CLOSED`.
-Изменение транзакционно, а SQL сравнивает прежний статус: конкурентное изменение даёт
-`409 incident_changed` вместо незаметной перезаписи.
+### JWT и авторизация
 
-### Валидация, ограничения и ошибки
+AuthService выдаёт JWT на 15 минут с подписью HS256. Пароль и его хэш в JWT не входят.
+JwtConfig проверяет подпись, issuer, audience, обязательные временные поля и наличие пользователя.
+Ключ JWT_SECRET_BASE64 задаётся через окружение и должен содержать минимум 32 случайных байта.
 
-- Bean Validation и сервис проверяют обязательность текста, длины, NUL и корректность Unicode.
-- Jackson отклоняет неизвестные поля и лишний JSON после основного объекта, не приводит
-  числа/boolean к строкам и не принимает числовые индексы вместо enum.
-- Тело запроса ограничено 16 КиБ, включая chunked-запросы без известного Content-Length.
-- Вход ограничен 10 попытками за минуту с одного IP; превышение даёт `429` и `Retry-After: 60`.
-  Счётчик локален процессу, использует `remoteAddr` и не заменяет общий лимит на reverse proxy.
-- Ошибки возвращаются как `{"error":"код"}` без stack trace, SQL и значений параметров.
-  `LoginRequest` не является data class, поэтому автогенерируемый `toString()` с паролем отсутствует.
-- Spring Security задаёт защитные HTTP-заголовки; кэширование защищённых ответов запрещено.
-- CSRF отключён для stateless API с явным Bearer-заголовком. Если добавить cookie-аутентификацию,
-  эту настройку нужно пересмотреть.
+SecurityConfig разрешает публично только POST /auth/login, а три метода работы с инцидентами
+требуют JWT. Остальные маршруты запрещены. Cookie-аутентификация, HTTP Basic и серверные сессии
+отключены; токен передаётся явно в Bearer-заголовке. Для такой схемы CSRF отключён.
 
-Это учебный сервис: нет командного доступа, полного поиска по истории и журнала всех
-изменений. Описанные меры не означают полного покрытия OWASP Top 10 или промышленной готовности.
+Владелец определяется по проверенному sub из JWT. Запросы к базе ограничены owner_id.
+Чужой и несуществующий ID дают одинаковый 404. Смена статуса выполняется в транзакции;
+условие по прежнему статусу предотвращает перезапись конкурентного изменения.
 
-## CI и проверка
+JWT подписан, но не зашифрован. Для доступа вне localhost нужен HTTPS.
+Refresh token, MFA и индивидуального отзыва токена в этой работе нет.
 
-.github/workflows/ci.yml содержит api-tests, sast и sca; запуск при push, pull_request и вручную.
-SAST анализирует production-байткод категории SECURITY. Три узких исключения документированы
-в config/spotbugs/reviewed-exclusions.xml: stateless CSRF, инвентаризация четырёх известных
-методов контроллера и чтение длины Authorization. XSS_SERVLET не исключён.
+### Валидация и ограничения
 
-SCA проверяет прямые и транзитивные runtime-зависимости через стандартный NVD REST API.
-Версия анализатора закреплена на **12.2.2**: в 13.0.0 подтверждена
-[регрессия анонимного доступа к NVD](https://github.com/dependency-check/DependencyCheck/issues/8715).
-Внутренний конфигурационный файл 13.0.0 задаёт пустой ключ даже при отсутствии настройки
-в Gradle. Поэтому одной фильтрации пустой переменной окружения недостаточно.
-В исходниках 12.2.2 этого пустого значения по умолчанию нет; опубликованный плагин
-сохраняет используемые в проекте Gradle Property-настройки.
-Переход версии проверен чтением исходников и конфигурации; новый SCA ещё не запускался.
-Неработающий URL feed удалён: Dependency-Check использует штатный API по
-[официальной документации](https://dependency-check.github.io/DependencyCheck/dependency-check-gradle/configuration.html).
-Без ключа используется анонимный доступ с более длительной паузой между запросами;
-лимит времени job увеличен до 60 минут для первоначальной загрузки базы.
-Необязательный `NVD_API_KEY` передаётся из окружения; в Actions — из одноимённого repository secret.
-Если ключ не задан, проверка работает в анонимном режиме. Значение ключа в Git не сохраняется.
-OSS Index выключен. Тестовый/build classpath не охвачен.
-CVSS ≥ 7 и ошибки инструмента блокируют job; отдельный контроль SHA-256 требует все рабочие JAR
-в JSON-отчёте. Отчёты сохраняются через if: always(). Actions закреплены по SHA.
+Bean Validation и TextRules проверяют обязательные поля, длины, Unicode и отсутствие NUL.
+JsonConfig запрещает неявное преобразование чисел и boolean в строки и enum.
+Неизвестные поля и лишний JSON отклоняются.
 
-### Результаты GitHub Actions
+RequestGuardFilter ограничивает тело запроса 16 КиБ, в том числе при chunked-передаче.
+LoginLimiter разрешает не более 10 попыток входа за минуту с одного IP.
+Ошибки возвращаются без stack trace, SQL-параметров, паролей и токенов.
+Ответы защищённых методов не кэшируются.
 
-Источник — [запуск № 1 от 26.10.2026](https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40358417953),
-коммит `70880fa1da8e91a77ccb808b54d23ee018821621`, ветка `main`, событие `push`.
+## CI и отчёты SAST/SCA
 
-| Проверка | Результат | Отчёт |
+[GitHub Actions](https://github.com/veronlkkkaa/infosec-lab1/actions) запускается при push,
+pull request и вручную. Workflow: [.github/workflows/ci.yml](.github/workflows/ci.yml).
+
+| Job | Что делает | Артефакт |
 |---|---|---|
-| API / security tests | 26 тестов, 0 ошибок, 0 пропусков | [Job api-tests](https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40358417953/job/121697005906), артефакт `api-tests` |
-| SAST | Job успешен; HTML: 39 классов, 0 предупреждений | [Job sast](https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40358417953/job/121697006320), артефакт `spotbugs-sast` |
-| SCA | Ошибка загрузки NVD: HTTP 404; отчёта нет | [Job sca](https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40358417953/job/121697006297) |
+| api-tests | Сборка и интеграционные тесты API и безопасности | api-tests: HTML и JUnit XML |
+| sast | CodeQL для java-kotlin, набор security-extended | codeql-sast: SARIF |
+| sca | OWASP Dependency-Check 12.2.2, прямые и транзитивные runtime-зависимости | dependency-check-sca: HTML и JSON |
 
-В HTML-отчёте SAST указаны **773 строки кода, 39 классов, 0 предупреждений** при
-выбранном фильтре SECURITY и документированных исключениях. При этом XML того же
-артефакта содержит `total_classes="0"`, хотя перечисляет 39 входных class-файлов.
-Статистика HTML и XML расходится; причина пока не установлена. Нулевое число
-предупреждений не доказывает отсутствие всех возможных уязвимостей.
+### SAST
 
-Отчёт SAST из этого запуска сохранён в репозитории: [HTML](docs/evidence/ci-40358417953/main.html),
-[XML](docs/evidence/ci-40358417953/main.xml). Артефакты GitHub Actions хранятся 30 дней.
-Чтобы открыть оригинал: Actions → Kotlin API security CI → first commit #1 → Artifacts →
-`spotbugs-sast` или `dependency-check-sca`; скачать ZIP и открыть HTML-отчёт.
+CodeQL собирает Kotlin-код в manual-режиме с отключённым build cache и компиляцией in-process,
+чтобы анализатор видел компиляцию. Результаты отправляются в Security → Code scanning
+и сохраняются в артефакте codeql-sast.
 
-### Скриншоты отчётов SAST/SCA
+Скрипт [scripts/check-codeql.py](scripts/check-codeql.py) завершает job ошибкой при находках,
+отсутствии или некорректном отчёте. Единственное рассмотренное исключение —
+java/spring-disabled-csrf-protection на конкретной строке SecurityConfig:
+API использует явный Bearer-заголовок без cookie и сессий.
+Правило, путь и строка закреплены в скрипте; изменение строки требует повторного рассмотрения.
+Исключение отображается в сводке CI, исходный SARIF сохраняется без удаления находки.
 
-Готовый SAST можно открыть локально: [main.html](docs/evidence/ci-40358417953/main.html),
-либо скачать [исходный ZIP](docs/evidence/ci-40358417953/spotbugs-sast.zip).
-Причина отсутствия отчёта SCA сохранена в [sca-error.txt](docs/evidence/ci-40358417953/sca-error.txt):
-источник NVD вернул HTTP 404 при загрузке `nvdcve-2.0-modified.json.gz`.
-В текущей конфигурации этот URL заменён штатным NVD API. Read-only запрос с
-`resultsPerPage=1` вернул HTTP 200; это проверка доступности API, а не успешный запуск SCA.
-Повторный анализ после исправления ещё не запускался.
+### SCA
 
-Скриншот SAST предоставлен автором и сохранён без изменений. Его показатели совпадают
-с HTML-отчётом запуска № 1: 773 строки, 39 классов, 0 предупреждений.
+Анализируется полный разрешённый runtimeClasspath: прямые зависимости и библиотеки,
+которые они подтягивают. Тестовые зависимости, Gradle-плагины и JDK не входят в этот набор.
+Дополнительная проверка SHA-256 требует присутствия каждого runtime JAR в JSON-отчёте.
+CVSS ≥ 7 или ошибка анализатора приводят к падению job.
 
-![SAST: отчёт SpotBugs из GitHub Actions](docs/screenshots/sast-report.png)
+Используется штатный NVD API. Версия Dependency-Check 12.2.2 сохранена из-за
+[ошибки анонимного доступа в 13.0.0](https://github.com/dependency-check/DependencyCheck/issues/8715).
+NVD_API_KEY передаётся из одноимённого repository secret; пустое значение не устанавливается.
+Ключ пользователь добавляет в
+[Settings → Secrets and variables → Actions](https://github.com/veronlkkkaa/infosec-lab1/settings/secrets/actions).
+Значение ключа не нужно присылать в чат или добавлять в Git. OSS Index отключён.
 
-**Осталось добавить:**
+База NVD находится в .cache/dependency-check и исключена из Git.
+В CI её восстановление, обновление и анализ показаны отдельными шагами.
+После успешного обновления база сохраняется до анализа: находка уязвимости не лишает следующий
+запуск кэша. Ошибки обновления не скрываются, сканирование с неполной базой не засчитывается.
+Первый полный импорт может быть долгим; кэш сокращает повторные загрузки.
+SCA jobs репозитория выполняются последовательно, вывод --info показывает прогресс.
 
-- `docs/screenshots/sca-report.png` — сводку HTML из артефакта `dependency-check-sca`
-  после успешного анализа с исправленным источником данных.
-- `docs/screenshots/ci-summary.png` — страницу соответствующего запуска Actions с коммитом
-  и итоговыми статусами jobs.
+### Где взять отчёты и скриншоты
 
-Скриншот SAST относится к запуску № 1 и коммиту `70880fa`; для будущего отчёта SCA
-нужно указать ссылку на новый запуск и его коммит. Старые отчёты из
-`docs/evidence/notes-2026-10-25/` относятся к прежнему приложению заметок и не подтверждают
-текущий журнал инцидентов. Текущий pipeline завершился с ошибкой SCA; успешного полного прогона пока нет.
+Открыть Actions → нужный запуск → Artifacts:
+
+- api-tests — скачать ZIP и открыть index.html.
+- codeql-sast — скачать SARIF; находки также доступны в Security → Code scanning.
+- dependency-check-sca — скачать ZIP и открыть dependency-check-report.html.
+
+Для актуальной версии нужно сохранить в docs/screenshots/:
+
+- codeql-report.png — результат SAST и сводку находок из соответствующего запуска.
+- sca-report.png — сводку HTML-отчёта SCA.
+- ci-summary.png — страницу запуска с коммитом и итогом трёх jobs.
+
+Эти скриншоты добавляются после фактического завершения новых проверок.
+Наличие конфигурации CI само по себе не подтверждает прохождение анализа.
+
+Архивный скриншот SpotBugs относится к
+[запуску № 1, коммит 70880fa](https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40358417953).
+Он не является результатом CodeQL или проверкой текущей структуры проекта:
+
+![Архивный отчёт SpotBugs: 39 классов, 0 предупреждений](docs/screenshots/sast-report.png)
+
+Оригинальные старые отчёты сохранены в docs/evidence/ci-40358417953/.

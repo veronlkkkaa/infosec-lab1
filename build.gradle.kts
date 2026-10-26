@@ -1,13 +1,10 @@
 import java.security.MessageDigest
-import com.github.spotbugs.snom.Confidence
-import com.github.spotbugs.snom.Effort
-import com.github.spotbugs.snom.SpotBugsTask
 
 plugins {
-    kotlin("jvm") version "2.4.21"
-    kotlin("plugin.spring") version "2.4.21"
+    // CodeQL currently supports Kotlin compilers through 2.4.20.
+    kotlin("jvm") version "2.4.20"
+    kotlin("plugin.spring") version "2.4.20"
     id("org.springframework.boot") version "4.1.2"
-    id("com.github.spotbugs") version "6.5.12"
     // 13.0.0 breaks anonymous NVD access: https://github.com/dependency-check/DependencyCheck/issues/8715
     id("org.owasp.dependencycheck") version "12.2.2"
 }
@@ -15,14 +12,19 @@ plugins {
 group = "ru.itmo.infosec"
 version = "1.0.0"
 
-repositories { mavenCentral() }
+repositories {
+    mavenCentral()
+}
+
 kotlin {
     jvmToolchain(21)
-    compilerOptions { freeCompilerArgs.add("-Xjsr305=strict") }
+    compilerOptions {
+        freeCompilerArgs.add("-Xjsr305=strict")
+    }
 }
 
 dependencies {
-    // Constrain application dependencies without overriding the separate SpotBugs tool classpath.
+    // Align runtime dependencies through BOMs; keep the compiler version compatible with CodeQL.
     implementation(platform(org.springframework.boot.gradle.plugin.SpringBootPlugin.BOM_COORDINATES))
     implementation(platform("org.jetbrains.kotlin:kotlin-bom:2.4.21"))
     implementation("org.springframework.boot:spring-boot-starter-webmvc")
@@ -36,35 +38,17 @@ dependencies {
     testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
     testImplementation("org.springframework.boot:spring-boot-starter-security-test")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    spotbugsPlugins("com.h3xstream.findsecbugs:findsecbugs-plugin:1.14.0")
 }
 
-tasks.withType<Test>().configureEach { useJUnitPlatform() }
-spotbugs {
-    toolVersion.set("4.10.4")
-    effort.set(Effort.MAX)
-    reportLevel.set(Confidence.LOW)
-    ignoreFailures.set(false)
-    includeFilter.set(file("config/spotbugs/security-include.xml"))
-    excludeFilter.set(file("config/spotbugs/reviewed-exclusions.xml"))
+tasks.withType<Test>().configureEach {
+    useJUnitPlatform()
 }
-tasks.named<SpotBugsTask>("spotbugsMain") {
-    reports.create("html") {
-        required.set(true)
-        outputLocation.set(layout.buildDirectory.file("reports/spotbugs/main.html"))
-    }
-    reports.create("xml") {
-        required.set(true)
-        outputLocation.set(layout.buildDirectory.file("reports/spotbugs/main.xml"))
-    }
-}
-// Test fixtures are verified by JUnit. SAST scans production bytecode.
-tasks.named<SpotBugsTask>("spotbugsTest") { enabled = false }
 
 // SCA uses public NVD data. Keep it separate from ordinary offline-capable build/test.
 dependencyCheck {
     formats.set(listOf("HTML", "JSON"))
     outputDirectory.set(layout.buildDirectory.dir("reports/dependency-check"))
+    data.directory.set(layout.projectDirectory.dir(".cache/dependency-check").asFile.absolutePath)
     scanConfigurations.set(listOf("runtimeClasspath"))
     // Spring Boot runtimeClasspath inherits testAndDevelopmentOnly; it is still production runtime.
     skipTestGroups.set(false)

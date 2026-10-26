@@ -10,6 +10,7 @@ permissions:
 
 jobs:
   api-tests:
+    name: Build and API tests
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
@@ -20,8 +21,9 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Integration and security tests
-        run: ./gradlew --no-daemon test
+          cache: gradle
+      - name: Build and integration tests
+        run: ./gradlew --no-daemon --console=plain build
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
@@ -29,12 +31,16 @@ jobs:
           path: |
             build/reports/tests/test/
             build/test-results/test/
-          if-no-files-found: warn
+          if-no-files-found: error
           retention-days: 30
 
   sast:
+    name: SAST - CodeQL
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 25
+    permissions:
+      contents: read
+      security-events: write
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -43,19 +49,37 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: SpotBugs and Find Security Bugs
-        run: ./gradlew --no-daemon spotbugsMain
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        with:
+          languages: java-kotlin
+          build-mode: manual
+          queries: security-extended
+      - name: Compile application for CodeQL
+        run: >-
+          ./gradlew --no-daemon --console=plain --no-build-cache
+          -Pkotlin.compiler.execution.strategy=in-process clean classes
+      - name: Analyze Kotlin
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        with:
+          output: build/reports/codeql
+          category: java-kotlin
+      - name: Check CodeQL findings
+        run: python3 scripts/check-codeql.py
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
-          name: spotbugs-sast
-          path: build/reports/spotbugs/
-          if-no-files-found: warn
+          name: codeql-sast
+          path: build/reports/codeql/
+          if-no-files-found: error
           retention-days: 30
 
   sca:
+    name: SCA - OWASP Dependency-Check
     runs-on: ubuntu-24.04
-    # The first NVD API download without a key can exceed 20 minutes.
+    concurrency:
+      group: sca-nvd-${{ github.repository }}
+      cancel-in-progress: false
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
@@ -65,14 +89,35 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: OWASP Dependency-Check (runtime dependencies, NVD)
+          cache: gradle
+      - name: Restore NVD database
+        uses: actions/cache/restore@caa296126883cff596d87d8935842f9db880ef25 # v5
+        with:
+          path: .cache/dependency-check
+          key: nvd-${{ runner.os }}-dc12.2.2-${{ github.run_id }}-${{ github.run_attempt }}
+          restore-keys: |
+            nvd-${{ runner.os }}-dc12.2.2-
+      - name: Update vulnerability database
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
-        run: ./gradlew --no-daemon dependencyCheckAnalyze
+        run: ./gradlew --no-daemon --console=plain --info dependencyCheckUpdate
+      # Save only a successfully updated database, before the vulnerability gate.
+      - name: Save updated NVD database
+        uses: actions/cache/save@caa296126883cff596d87d8935842f9db880ef25 # v5
+        continue-on-error: true
+        with:
+          path: .cache/dependency-check
+          key: nvd-${{ runner.os }}-dc12.2.2-${{ github.run_id }}-${{ github.run_attempt }}
+      - name: Analyze direct and transitive runtime dependencies
+        env:
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        run: ./gradlew --no-daemon --console=plain --info dependencyCheckAnalyze
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
           name: dependency-check-sca
-          path: build/reports/dependency-check/
-          if-no-files-found: warn
+          path: |
+            build/reports/dependency-check/dependency-check-report.html
+            build/reports/dependency-check/dependency-check-report.json
+          if-no-files-found: error
           retention-days: 30
