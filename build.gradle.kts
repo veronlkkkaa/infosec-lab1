@@ -69,7 +69,9 @@ dependencyCheck {
     skipTestGroups.set(false)
     failBuildOnCVSS.set(7.0F)
     failOnError.set(true)
-    nvd.datafeedUrl.set("https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-{0}.json.gz")
+    // Use the standard NVD REST API; the previous custom feed returned HTTP 404.
+    // An optional key speeds up requests. Without it, the plugin applies its anonymous rate limit.
+    nvd.apiKey.set(providers.environmentVariable("NVD_API_KEY").orElse(""))
     nvd.maxRetryCount.set(3)
     // Supplementary OSS Index now requires credentials; NVD analysis remains enabled.
     analyzers.ossIndex.enabled.set(false)

@@ -1,0 +1,10 @@
+Source: https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40358417953/job/121697006297
+Commit: 70880fa1da8e91a77ccb808b54d23ee018821621
+Selected original log lines:
+2026-10-26T16:36:43.5466704Z Error downloading NVD CVE - https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-modified.json.gz Reason: https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-modified.json.gz - Server status: 404 - Server reason: Not Found
+2026-10-26T16:36:43.7323397Z Caused by: java.util.concurrent.ExecutionException: org.owasp.dependencycheck.utils.ResourceNotFoundException: https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-modified.json.gz - Server status: 404 - Server reason: Not Found
+2026-10-26T16:36:43.7326207Z Caused by: org.owasp.dependencycheck.utils.ResourceNotFoundException: https://nvd.nist.gov/feeds/json/cve/2.0/nvdcve-2.0-modified.json.gz - Server status: 404 - Server reason: Not Found
+2026-10-26T16:36:57.1443948Z > Task :dependencyCheckAnalyze FAILED
+2026-10-26T16:36:57.1450655Z > Analysis failed.
+2026-10-26T16:36:57.1463584Z BUILD FAILED in 14m 47s
+2026-10-26T16:36:57.4542091Z ##[warning]No files were found with the provided path: build/reports/dependency-check/. No artifacts will be uploaded.

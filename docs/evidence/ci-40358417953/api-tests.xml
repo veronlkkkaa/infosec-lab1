@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="ru.itmo.infosec.lab1.ApiSecurityTest" tests="26" skipped="0" failures="0" errors="0" timestamp="2026-10-26T16:23:40.463Z" hostname="runnervmtai0g" time="3.577">
+  <properties/>
+  <testcase name="wrong password and missing account return the same error()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="1.494"/>
+  <testcase name="login rate limiter rejects the eleventh request()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.193"/>
+  <testcase name="SQL text in incidents cannot modify the schema()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.229"/>
+  <testcase name="security headers apply to successful and rejected requests()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.027"/>
+  <testcase name="unsigned JWT is rejected()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.01"/>
+  <testcase name="SQL injection does not authenticate a user()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.302"/>
+  <testcase name="invalid input is rejected before writing data()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.048"/>
+  <testcase name="another user cannot update an incident or distinguish it from an absent ID()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.045"/>
+  <testcase name="stale status updates cannot overwrite a newer state()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.017"/>
+  <testcase name="script input is encoded on creation and retrieval but stored raw()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.022"/>
+  <testcase name="expired future and incorrect claims are rejected()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.022"/>
+  <testcase name="another user cannot read or claim ownership of an incident()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.025"/>
+  <testcase name="deleting a user invalidates their existing token()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.008"/>
+  <testcase name="list returns only the latest hundred owned incidents()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.076"/>
+  <testcase name="status update rejects invalid types fields and identifiers()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.229"/>
+  <testcase name="numbers and booleans are not coerced into strings()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.036"/>
+  <testcase name="incident progresses through investigation and repeated status is idempotent()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.034"/>
+  <testcase name="user creates and reads an incident()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.014"/>
+  <testcase name="enums require exact names and creation rejects client assigned state()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.06"/>
+  <testcase name="bcrypt storage and its 72 byte limit are enforced()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.299"/>
+  <testcase name="all required claims must be present()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.014"/>
+  <testcase name="malformed and altered signatures are rejected()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.011"/>
+  <testcase name="login returns a usable short lived signed JWT()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.312"/>
+  <testcase name="all protected methods reject missing JWT()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.005"/>
+  <testcase name="workflow cannot skip investigation move backwards or reopen a closed incident()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.028"/>
+  <testcase name="large request body is rejected()" classname="ru.itmo.infosec.lab1.ApiSecurityTest" time="0.004"/>
+  <system-out><![CDATA[16:23:36.748 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [ru.itmo.infosec.lab1.ApiSecurityTest]: ApiSecurityTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+16:23:36.894 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration ru.itmo.infosec.lab1.Application for test class ru.itmo.infosec.lab1.ApiSecurityTest
+16:23:36.979 [Test worker] INFO org.springframework.test.context.support.AnnotationConfigContextLoaderUtils -- Could not detect default configuration classes for test class [ru.itmo.infosec.lab1.ApiSecurityTest]: ApiSecurityTest does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
+16:23:36.984 [Test worker] INFO org.springframework.boot.test.context.SpringBootTestContextBootstrapper -- Found @SpringBootConfiguration ru.itmo.infosec.lab1.Application for test class ru.itmo.infosec.lab1.ApiSecurityTest
+
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+
+ :: Spring Boot ::                (v4.1.2)
+
+2026-10-26T16:23:37.368Z  INFO 2710 --- [lab1-secure-api] [    Test worker] ru.itmo.infosec.lab1.ApiSecurityTest     : Starting ApiSecurityTest using Java 21.0.12.1 with PID 2710 (started by runner in /home/runner/work/infosec-lab1/infosec-lab1)
+2026-10-26T16:23:37.370Z  INFO 2710 --- [lab1-secure-api] [    Test worker] ru.itmo.infosec.lab1.ApiSecurityTest     : No active profile set, falling back to 1 default profile: "default"
+2026-10-26T16:23:38.654Z  INFO 2710 --- [lab1-secure-api] [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2026-10-26T16:23:38.804Z  INFO 2710 --- [lab1-secure-api] [    Test worker] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection conn0: url=jdbc:h2:mem:labtest user=SA
+2026-10-26T16:23:38.806Z  INFO 2710 --- [lab1-secure-api] [    Test worker] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2026-10-26T16:23:39.962Z  INFO 2710 --- [lab1-secure-api] [    Test worker] o.s.b.t.m.w.SpringBootMockServletContext : Initializing Spring TestDispatcherServlet ''
+2026-10-26T16:23:39.962Z  INFO 2710 --- [lab1-secure-api] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Initializing Servlet ''
+2026-10-26T16:23:39.966Z  INFO 2710 --- [lab1-secure-api] [    Test worker] o.s.t.web.servlet.TestDispatcherServlet  : Completed initialization in 4 ms
+2026-10-26T16:23:40.109Z  INFO 2710 --- [lab1-secure-api] [    Test worker] ru.itmo.infosec.lab1.ApiSecurityTest     : Started ApiSecurityTest in 3.076 seconds (process running for 4.816)
+]]></system-out>
+  <system-err><![CDATA[Mockito is currently self-attaching to enable the inline-mock-maker. This will no longer work in future releases of the JDK. Please add Mockito as an agent to your build as described in Mockito's documentation: https://javadoc.io/doc/org.mockito/mockito-core/latest/org.mockito/org/mockito/Mockito.html#0.3
+WARNING: A Java agent has been loaded dynamically (/home/runner/.gradle/caches/modules-2/files-2.1/net.bytebuddy/byte-buddy-agent/1.18.15/de6980bb799c25bb1fe9e6c434201299cb5e694e/byte-buddy-agent-1.18.15.jar)
+WARNING: If a serviceability tool is in use, please run with -XX:+EnableDynamicAgentLoading to hide this warning
+WARNING: If a serviceability tool is not in use, please run with -Djdk.instrument.traceUsage for more information
+WARNING: Dynamic loading of agents will be disallowed by default in a future release
+]]></system-err>
+</testsuite>

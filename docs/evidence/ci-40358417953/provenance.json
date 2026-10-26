@@ -1,0 +1,11 @@
+{
+  "run_url": "https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40358417953",
+  "commit": "70880fa1da8e91a77ccb808b54d23ee018821621",
+  "sast_artifact_id": 12667965158,
+  "tests_artifact_id": 12666153897,
+  "files": {
+    "api-tests.xml": "b368343575fe61406c6e9c3b97f25b241cba2bf680e14969bf74afd51016bf0f",
+    "main.html": "cbef75fab445d9b31ddd849a55869027f162c9133b9317ae61e7fe32e63e78e8",
+    "main.xml": "1b2b2ebff1cc2767160791b9b0cf835ae4980f0c1a55269a7bfddcb137b6ccb3"
+  }
+}
