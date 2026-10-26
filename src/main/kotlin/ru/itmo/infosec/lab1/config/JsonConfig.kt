@@ -1,4 +1,4 @@
-package ru.itmo.infosec.lab1
+package ru.itmo.infosec.lab1.config
 
 import org.springframework.boot.jackson.autoconfigure.JsonMapperBuilderCustomizer
 import org.springframework.context.annotation.Bean

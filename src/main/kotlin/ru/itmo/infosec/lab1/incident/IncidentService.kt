@@ -1,7 +1,8 @@
-package ru.itmo.infosec.lab1
+package ru.itmo.infosec.lab1.incident
 
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import ru.itmo.infosec.lab1.validation.TextRules
 
 @Service
 class IncidentService(private val incidents: IncidentRepository) {

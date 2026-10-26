@@ -1,10 +1,8 @@
-package ru.itmo.infosec.lab1
+package ru.itmo.infosec.lab1.auth
 
 import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.jdbc.core.RowMapper
 import org.springframework.stereotype.Repository
-
-class UserRecord(val id: Long, val username: String, val passwordHash: String)
 
 @Repository
 class UserRepository(private val jdbc: JdbcTemplate) {

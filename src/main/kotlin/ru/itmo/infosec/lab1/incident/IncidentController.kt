@@ -1,4 +1,4 @@
-package ru.itmo.infosec.lab1
+package ru.itmo.infosec.lab1.incident
 
 import jakarta.validation.Valid
 import org.springframework.http.HttpStatus
@@ -12,12 +12,10 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.ResponseStatus
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.util.HtmlUtils
+import ru.itmo.infosec.lab1.error.ApiException
 
 @RestController
-class ApiController(private val auth: AuthService, private val incidents: IncidentService) {
-    @PostMapping("/auth/login", consumes = ["application/json"], produces = ["application/json"])
-    fun login(@Valid @RequestBody body: LoginRequest): TokenResponse = auth.login(body)
-
+class IncidentController(private val incidents: IncidentService) {
     @GetMapping("/api/data", produces = ["application/json"])
     fun listIncidents(@AuthenticationPrincipal jwt: Jwt): IncidentList =
         IncidentList(incidents.listOwned(jwt.ownerId()).map { it.toResponse() })

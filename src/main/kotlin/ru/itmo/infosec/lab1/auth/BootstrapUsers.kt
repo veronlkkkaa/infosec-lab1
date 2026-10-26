@@ -1,4 +1,4 @@
-package ru.itmo.infosec.lab1
+package ru.itmo.infosec.lab1.auth
 
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.boot.ApplicationArguments
@@ -8,6 +8,7 @@ import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitializat
 import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import ru.itmo.infosec.lab1.validation.TextRules
 
 @Component
 @DependsOnDatabaseInitialization

@@ -32,6 +32,13 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.header
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
+import ru.itmo.infosec.lab1.auth.UserRepository
+import ru.itmo.infosec.lab1.incident.IncidentCategory
+import ru.itmo.infosec.lab1.incident.IncidentRepository
+import ru.itmo.infosec.lab1.incident.IncidentSeverity
+import ru.itmo.infosec.lab1.incident.IncidentStatus
+import ru.itmo.infosec.lab1.security.JWT_AUDIENCE
+import ru.itmo.infosec.lab1.security.JWT_ISSUER
 import tools.jackson.databind.ObjectMapper
 
 @SpringBootTest(

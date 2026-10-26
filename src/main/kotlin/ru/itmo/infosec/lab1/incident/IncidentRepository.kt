@@ -1,4 +1,4 @@
-package ru.itmo.infosec.lab1
+package ru.itmo.infosec.lab1.incident
 
 import java.time.OffsetDateTime
 import org.springframework.jdbc.core.JdbcTemplate

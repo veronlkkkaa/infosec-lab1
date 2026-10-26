@@ -1,4 +1,4 @@
-package ru.itmo.infosec.lab1
+package ru.itmo.infosec.lab1.auth
 
 import java.security.SecureRandom
 import java.time.Clock
@@ -11,6 +11,11 @@ import org.springframework.security.oauth2.jwt.JwtClaimsSet
 import org.springframework.security.oauth2.jwt.JwtEncoder
 import org.springframework.security.oauth2.jwt.JwtEncoderParameters
 import org.springframework.stereotype.Service
+import ru.itmo.infosec.lab1.error.ApiException
+import ru.itmo.infosec.lab1.security.JWT_AUDIENCE
+import ru.itmo.infosec.lab1.security.JWT_ISSUER
+import ru.itmo.infosec.lab1.security.JWT_LIFETIME_SECONDS
+import ru.itmo.infosec.lab1.validation.TextRules
 
 @Service
 class AuthService(

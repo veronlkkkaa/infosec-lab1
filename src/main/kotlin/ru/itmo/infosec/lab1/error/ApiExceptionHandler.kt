@@ -1,4 +1,4 @@
-package ru.itmo.infosec.lab1
+package ru.itmo.infosec.lab1.error
 
 import org.slf4j.LoggerFactory
 import org.springframework.http.HttpHeaders
@@ -9,6 +9,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import org.springframework.web.context.request.WebRequest
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler
+import ru.itmo.infosec.lab1.incident.IncidentException
+import ru.itmo.infosec.lab1.incident.IncidentFailure
 
 @RestControllerAdvice
 class ApiExceptionHandler : ResponseEntityExceptionHandler() {

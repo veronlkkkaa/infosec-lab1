@@ -1,4 +1,4 @@
-package ru.itmo.infosec.lab1
+package ru.itmo.infosec.lab1.security
 
 import jakarta.servlet.FilterChain
 import jakarta.servlet.ReadListener
@@ -9,45 +9,8 @@ import jakarta.servlet.http.HttpServletResponse
 import java.io.BufferedReader
 import java.io.ByteArrayInputStream
 import java.io.InputStreamReader
-import java.util.ArrayDeque
-import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
-import tools.jackson.databind.json.JsonMapper
-
-object JsonErrors {
-    private val mapper = JsonMapper.builder().build()
-
-    // All callers pass fixed internal error identifiers, never submitted text.
-    fun write(response: HttpServletResponse, status: Int, code: String) {
-        response.status = status
-        response.contentType = "application/json"
-        response.characterEncoding = "UTF-8"
-        response.setHeader("Cache-Control", "no-store")
-        mapper.writeValue(response.writer, ApiError(code))
-    }
-}
-
-@Component
-class LoginLimiter {
-    private val attempts = mutableMapOf<String, ArrayDeque<Long>>()
-
-    @Synchronized
-    fun allow(address: String): Boolean {
-        val now = System.nanoTime()
-        val cutoff = now - 60_000_000_000L
-        val entries = attempts.entries.iterator()
-        while (entries.hasNext()) {
-            val timestamps = entries.next().value
-            while (timestamps.isNotEmpty() && timestamps.peekFirst() <= cutoff) timestamps.removeFirst()
-            if (timestamps.isEmpty()) entries.remove()
-        }
-        if (address !in attempts && attempts.size >= 4096) return false
-        val timestamps = attempts.getOrPut(address) { ArrayDeque() }
-        if (timestamps.size >= 10) return false
-        timestamps.addLast(now)
-        return true
-    }
-}
+import ru.itmo.infosec.lab1.error.JsonErrors
 
 // Instantiated only inside SecurityFilterChain, not registered as a second servlet filter.
 class RequestGuardFilter(private val limiter: LoginLimiter) : OncePerRequestFilter() {
