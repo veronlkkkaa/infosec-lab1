@@ -80,7 +80,8 @@ jobs:
     concurrency:
       group: sca-nvd-${{ github.repository }}
       cancel-in-progress: false
-    timeout-minutes: 60
+    # The initial NVD import can exceed one hour; later runs reuse the completed database.
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
         with:
@@ -98,6 +99,7 @@ jobs:
           restore-keys: |
             nvd-${{ runner.os }}-dc12.2.2-
       - name: Update vulnerability database
+        timeout-minutes: 150
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: ./gradlew --no-daemon --console=plain --info dependencyCheckUpdate
@@ -109,11 +111,15 @@ jobs:
           path: .cache/dependency-check
           key: nvd-${{ runner.os }}-dc12.2.2-${{ github.run_id }}-${{ github.run_attempt }}
       - name: Analyze direct and transitive runtime dependencies
+        id: sca_analysis
+        timeout-minutes: 20
         env:
           NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
         run: ./gradlew --no-daemon --console=plain --info dependencyCheckAnalyze
-      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        if: always()
+      - name: Upload SCA reports
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        # A vulnerability gate can fail after producing reports. A skipped analysis cannot.
+        if: ${{ !cancelled() && (steps.sca_analysis.outcome == 'success' || steps.sca_analysis.outcome == 'failure') }}
         with:
           name: dependency-check-sca
           path: |
