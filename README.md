@@ -264,14 +264,25 @@ SCA jobs репозитория выполняются последовател�
 - codeql-sast — скачать SARIF; находки также доступны в Security → Code scanning.
 - dependency-check-sca — скачать ZIP и открыть dependency-check-report.html.
 
-Для актуальной версии нужно сохранить в docs/screenshots/:
+#### Результаты запуска № 10
 
-- codeql-report.png — результат SAST и сводку находок из соответствующего запуска.
-- sca-report.png — сводку HTML-отчёта SCA.
-- ci-summary.png — страницу запуска с коммитом и итогом трёх jobs.
+[Успешный запуск GitHub Actions № 10 для коммита `a5efa51`](https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40405342988).
+В артефакте `api-tests` зафиксировано 26 пройденных тестов.
 
-Эти скриншоты добавляются после фактического завершения новых проверок.
-Наличие конфигурации CI само по себе не подтверждает прохождение анализа.
+**SAST — CodeQL.** Сводка восстановлена штатным скриптом `scripts/check-codeql.py`
+из оригинального `java.sarif`. Зафиксировано одно рассмотренное исключение для CSRF
+и ни одной блокирующей находки.
+[Задача SAST в GitHub Actions](https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40405342988/job/121861538137).
+
+![Сводка CodeQL из SARIF запуска № 10](docs/screenshots/codeql-report.png)
+
+**SCA — OWASP Dependency-Check.** Оригинальный HTML-отчёт показывает 75 проверенных
+зависимостей и 0 обнаруженных уязвимостей.
+[Задача SCA в GitHub Actions](https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40405342988/job/121861538326).
+
+![Сводка оригинального HTML-отчёта OWASP Dependency-Check из запуска № 10](docs/screenshots/sca-report.png)
+
+#### Архивные материалы
 
 Архивный скриншот SpotBugs относится к
 [запуску № 1, коммит 70880fa](https://github.com/veronlkkkaa/infosec-lab1/actions/runs/40358417953).
